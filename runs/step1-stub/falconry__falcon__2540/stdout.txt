@@ -1,0 +1,79 @@
+[32m2026-11-12 20:04:02.021[0m | [33m[1mWARNING [0m | [36mpr_agent.custom_merge_loader[0m:[36mload[0m:[36m67[0m - [33m[1mSettings file not found: /home/user/Projects/pr-agent-lab/upstream/pr-agent/pr_agent/settings/.secrets.toml. Skipping it.[0m
+[32m2026-11-12 20:04:02.021[0m | [33m[1mWARNING [0m | [36mpr_agent.custom_merge_loader[0m:[36mload[0m:[36m67[0m - [33m[1mSettings file not found: /home/user/Projects/pr-agent-lab/upstream/pr-agent/pr_agent/settings_prod/.secrets.toml. Skipping it.[0m
+[32m2026-11-12 20:04:02.135[0m | [1mINFO    [0m | [36mpr_agent.algo.utils[0m:[36mupdate_settings_from_args[0m:[36m924[0m - [1mUpdated setting PLAIN_DIFF.TITLE to: "feat(request): add delimiter support to get_param_as_list"[0m
+[32m2026-11-12 20:04:02.137[0m | [1mINFO    [0m | [36mpr_agent.algo.utils[0m:[36mupdate_settings_from_args[0m:[36m924[0m - [1mUpdated setting PLAIN_DIFF.DESCRIPTION to: "Add a new delimiter keyword argument to 
+req.get_param_as_list to support splitting query parameter values on characters other than a comma.
+
+Closes #2538 
+
+# Summary of Changes
+
+This PR introduces a new delimiter keyword argument to the req.get_param_as_list() method.
+
+This enhancement allows for parsing list-style query parameters that use delimiters other than the default comma (e.g., spaces, pipes). The primary motivation is to better support spaceDelimited and pipeDelimited styles as described in the OpenAPI specification.
+
+The splitting logic is only applied when the parameter value is a single string, which preserves the framework's existing behavior for handling multiple instances of the same parameter in a query string.
+
+# Related Issues
+
+Closes #2538 
+
+# Pull Request Checklist
+
+This is just a reminder about the most common mistakes.  Please make sure that you tick all *appropriate* boxes.  Reading our [contribution guide](https://falcon.readthedocs.io/en/stable/community/contributing.html) at least once will save you a few review cycles!
+
+If an item doesn't apply to your pull request, **check it anyway** to make it apparent that there's nothing to do.
+
+- [x] Applied changes to both WSGI and ASGI code paths and interfaces (where applicable).
+- [x] Added **tests** for changed code.
+- [x] Performed automated tests and code quality checks by [running `tox`](https://falcon.readthedocs.io/en/stable/community/contributing.html#pull-requests).
+- [x] Prefixed code comments with GitHub nick and an appropriate prefix.
+- [x] Coding style is consistent with the rest of the framework.
+- [x] Updated **documentation** for changed code.
+    - [x] Added docstrings for any new classes, functions, or modules.
+    - [x] Updated docstrings for any modifications to existing code.
+    - [x] Updated both WSGI and ASGI docs (where applicable).
+    - [x] Added references to new classes, functions, or modules to the relevant RST file under `docs/`.
+    - [x] Updated all relevant supporting documentation files under `docs/`.
+    - [x] A copyright notice is included at the top of any new modules (using your own name or the name of your organization).
+    - [x] Changed/added classes/methods/functions have appropriate `versionadded`, `versionchanged`, or `deprecated` [directives](http://www.sphinx-doc.org/en/stable/usage/restructuredtext/directives.html?highlight=versionadded#directive-versionadded).
+- [x] Changes (and possible deprecations) have [towncrier](https://towncrier.readthedocs.io/en/latest/tutorial.html#creating-news-fragments) news fragments under `docs/_newsfragments/`, with the file name format `{issue_number}.{fragment_type}.rst`. (Run `towncrier --draft` to ensure it renders correctly.)
+
+If you have *any* questions to *any* of the points above, just **submit and ask**! This checklist is here to *help* you, not to deter you from contributing!
+
+*PR template inspired by the attrs project.*
+"[0m
+[32m2026-11-12 20:04:02.392[0m | [33m[1mWARNING [0m | [36mpr_agent.algo.repo_context[0m:[36m_provider_supports_repo_context[0m:[36m160[0m - [33m[1mrepo_context_files is configured, but PlainDiffGitProvider does not support repository file fetching; skipping repo context[0m
+[32m2026-11-12 20:04:02.395[0m | [1mINFO    [0m | [36mpr_agent.commands.pr_reviewer[0m:[36m_run_review[0m:[36m695[0m - [1mReviewing PR: local_diff ...[0m
+[32m2026-11-12 20:04:02.412[0m | [1mINFO    [0m | [36mpr_agent.algo.pr_processing[0m:[36mget_pr_diff[0m:[36m246[0m - [1mPR main language: Python[0m
+[32m2026-11-12 20:04:02.414[0m | [1mINFO    [0m | [36mpr_agent.algo.pr_processing[0m:[36mget_pr_diff[0m:[36m266[0m - [1mTokens: 4706, total tokens under limit: 32000, returning full diff.[0m
+
+[1;31mProvider List: https://docs.litellm.ai/docs/providers[0m
+
+[32m2026-11-12 20:04:02.504[0m | [1mINFO    [0m | [36mpr_agent.commands.pr_reviewer[0m:[36m_publish_key_issues_as_inline_comments[0m:[36m2097[0m - [1mInline key-issue publishing is not verifiable for this provider; keeping findings in the review summary[0m
+## PR Reviewer Guide 🔍
+
+Here are some key observations to aid the review process:
+
+<table>
+<tr><td>⏱️&nbsp;<strong>Estimated effort to review</strong>: 1 🔵⚪⚪⚪⚪</td></tr>
+<tr><td>🧪&nbsp;<strong>No relevant tests</strong></td></tr>
+<tr><td>🔒&nbsp;<strong>No security concerns identified</strong></td></tr>
+<tr><td>⚡&nbsp;<strong>Recommended focus areas for review</strong><br><br>
+
+<strong>STUB OUTPUT - NOT A MODEL REVIEW</strong><br>This finding was returned by scripts/stub_llm.py to rehearse the pipeline. No model was called.
+
+</td></tr>
+</table>
+
+<hr>
+<details> <summary><strong>⚙️ Agent run details</strong></summary>
+
+- Model: openai/lab-stub
+- Tokens: 4,785 in / 100 out / 4,885 total
+- Time cost: 0.1s
+- AI calls: 1
+- Estimated API cost: unavailable (no calls could be priced)
+
+</details>
+

@@ -1,0 +1,177 @@
+{
+  "mode": "stub",
+  "model": "openai/lab-stub",
+  "versions": {
+    "pr_agent_commit": "41a7ead86d3ede31d2ec7e54b5a7673a0b9acee5",
+    "pr_agent_describe": "v0.50.0-100-g41a7ead8",
+    "pr_agent_package_version": "0.49.0",
+    "pr_agent_local_changes": false,
+    "litellm_version": "1.108.5"
+  },
+  "runs": [
+    {
+      "pr_url": "https://github.com/coreos/coreos-assembler/pull/4394",
+      "head_sha": "b934d3ad34be0625bb34c31e67e296852d825189",
+      "mode": "stub",
+      "stub": true,
+      "model": "openai/lab-stub",
+      "started_at": "2026-11-12T12:03:54+00:00",
+      "wall_seconds_including_startup": 5.11,
+      "exit_code": 0,
+      "json_output_written": true,
+      "diff_chars": 2842,
+      "usage": {
+        "prompt_tokens": 2086,
+        "completion_tokens": 100,
+        "total_tokens": 2186
+      },
+      "run_details_footer": {
+        "Model": "openai/lab-stub",
+        "Tokens": "2,086 in / 100 out / 2,186 total",
+        "Time cost": "0.1s",
+        "AI calls": "1",
+        "Estimated API cost": "unavailable (no calls could be priced)",
+        "model_seconds": 0.1
+      },
+      "computed_cost": {
+        "cost_usd": null,
+        "reason": "model not in the pinned price table or no usage reported"
+      },
+      "findings": 1,
+      "github_env_removed": [],
+      "command": [
+        "/home/user/Projects/pr-agent-lab/upstream/pr-agent/.venv/bin/pr-agent",
+        "--diff-file",
+        "/home/user/Projects/pr-agent-lab/runs/step1-inputs/coreos__coreos-assembler__4394.diff",
+        "--output",
+        "/home/user/Projects/pr-agent-lab/runs/step1-stub/coreos__coreos-assembler__4394/review.md",
+        "--json-output",
+        "/home/user/Projects/pr-agent-lab/runs/step1-stub/coreos__coreos-assembler__4394/review.json",
+        "review",
+        "--plain_diff.title=osubild: drop backport patch for setting xfs agcount",
+        "--plain_diff.description=<PR body>"
+      ],
+      "note": "Rehearsal only. The review text and the usage numbers come from scripts/stub_llm.py, not from a model. Latency excludes any model time."
+    },
+    {
+      "pr_url": "https://github.com/falconry/falcon/pull/2540",
+      "head_sha": "74c00b25d64f3a0a4c2304a2cfbfdd8cc0c4bd10",
+      "mode": "stub",
+      "stub": true,
+      "model": "openai/lab-stub",
+      "started_at": "2026-11-12T12:03:59+00:00",
+      "wall_seconds_including_startup": 4.53,
+      "exit_code": 0,
+      "json_output_written": true,
+      "diff_chars": 8857,
+      "usage": {
+        "prompt_tokens": 4785,
+        "completion_tokens": 100,
+        "total_tokens": 4885
+      },
+      "run_details_footer": {
+        "Model": "openai/lab-stub",
+        "Tokens": "4,785 in / 100 out / 4,885 total",
+        "Time cost": "0.1s",
+        "AI calls": "1",
+        "Estimated API cost": "unavailable (no calls could be priced)",
+        "model_seconds": 0.1
+      },
+      "computed_cost": {
+        "cost_usd": null,
+        "reason": "model not in the pinned price table or no usage reported"
+      },
+      "findings": 1,
+      "github_env_removed": [],
+      "command": [
+        "/home/user/Projects/pr-agent-lab/upstream/pr-agent/.venv/bin/pr-agent",
+        "--diff-file",
+        "/home/user/Projects/pr-agent-lab/runs/step1-inputs/falconry__falcon__2540.diff",
+        "--output",
+        "/home/user/Projects/pr-agent-lab/runs/step1-stub/falconry__falcon__2540/review.md",
+        "--json-output",
+        "/home/user/Projects/pr-agent-lab/runs/step1-stub/falconry__falcon__2540/review.json",
+        "review",
+        "--plain_diff.title=feat(request): add delimiter support to get_param_as_list",
+        "--plain_diff.description=<PR body>"
+      ],
+      "note": "Rehearsal only. The review text and the usage numbers come from scripts/stub_llm.py, not from a model. Latency excludes any model time."
+    },
+    {
+      "pr_url": "https://github.com/firebase/firebase-android-sdk/pull/7617",
+      "head_sha": "8605a9e053d729056a11a6657d0081929b04ff5d",
+      "mode": "stub",
+      "stub": true,
+      "model": "openai/lab-stub",
+      "started_at": "2026-11-12T12:04:03+00:00",
+      "wall_seconds_including_startup": 5.08,
+      "exit_code": 0,
+      "json_output_written": true,
+      "diff_chars": 34464,
+      "usage": {
+        "prompt_tokens": 12205,
+        "completion_tokens": 100,
+        "total_tokens": 12305
+      },
+      "run_details_footer": {
+        "Model": "openai/lab-stub",
+        "Tokens": "12,205 in / 100 out / 12,305 total",
+        "Time cost": "0.2s",
+        "AI calls": "1",
+        "Estimated API cost": "unavailable (no calls could be priced)",
+        "model_seconds": 0.2
+      },
+      "computed_cost": {
+        "cost_usd": null,
+        "reason": "model not in the pinned price table or no usage reported"
+      },
+      "findings": 1,
+      "github_env_removed": [],
+      "command": [
+        "/home/user/Projects/pr-agent-lab/upstream/pr-agent/.venv/bin/pr-agent",
+        "--diff-file",
+        "/home/user/Projects/pr-agent-lab/runs/step1-inputs/firebase__firebase-android-sdk__7617.diff",
+        "--output",
+        "/home/user/Projects/pr-agent-lab/runs/step1-stub/firebase__firebase-android-sdk__7617/review.md",
+        "--json-output",
+        "/home/user/Projects/pr-agent-lab/runs/step1-stub/firebase__firebase-android-sdk__7617/review.json",
+        "review",
+        "--plain_diff.title=dataconnect: testing: de-duplicate \"proto value path\" logic",
+        "--plain_diff.description=<PR body>"
+      ],
+      "note": "Rehearsal only. The review text and the usage numbers come from scripts/stub_llm.py, not from a model. Latency excludes any model time."
+    }
+  ],
+  "captured_prompts": [
+    {
+      "file": "request_001.json",
+      "model_requested": "lab-stub",
+      "system_chars": 7065,
+      "user_chars": 1279,
+      "request_params": [
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "request_002.json",
+      "model_requested": "lab-stub",
+      "system_chars": 7065,
+      "user_chars": 12078,
+      "request_params": [
+        "model",
+        "temperature"
+      ]
+    },
+    {
+      "file": "request_003.json",
+      "model_requested": "lab-stub",
+      "system_chars": 7065,
+      "user_chars": 41755,
+      "request_params": [
+        "model",
+        "temperature"
+      ]
+    }
+  ]
+}

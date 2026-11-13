@@ -1,0 +1,1 @@
+{"note":"Written inside `unshare -r -n` (no network interface except loopback). An HTTPS request to api.github.com from the same namespace failed with URLError, and all three rehearsal reviews still completed.","date":"2026-11-12"}

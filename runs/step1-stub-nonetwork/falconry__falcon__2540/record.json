@@ -1,0 +1,44 @@
+{
+  "pr_url": "https://github.com/falconry/falcon/pull/2540",
+  "head_sha": "74c00b25d64f3a0a4c2304a2cfbfdd8cc0c4bd10",
+  "mode": "stub",
+  "stub": true,
+  "model": "openai/lab-stub",
+  "started_at": "2026-11-12T12:04:14+00:00",
+  "wall_seconds_including_startup": 4.68,
+  "exit_code": 0,
+  "json_output_written": true,
+  "diff_chars": 8857,
+  "usage": {
+    "prompt_tokens": 4785,
+    "completion_tokens": 100,
+    "total_tokens": 4885
+  },
+  "run_details_footer": {
+    "Model": "openai/lab-stub",
+    "Tokens": "4,785 in / 100 out / 4,885 total",
+    "Time cost": "0.1s",
+    "AI calls": "1",
+    "Estimated API cost": "unavailable (no calls could be priced)",
+    "model_seconds": 0.1
+  },
+  "computed_cost": {
+    "cost_usd": null,
+    "reason": "model not in the pinned price table or no usage reported"
+  },
+  "findings": 1,
+  "github_env_removed": [],
+  "command": [
+    "/home/user/Projects/pr-agent-lab/upstream/pr-agent/.venv/bin/pr-agent",
+    "--diff-file",
+    "/home/user/Projects/pr-agent-lab/runs/step1-inputs/falconry__falcon__2540.diff",
+    "--output",
+    "/home/user/Projects/pr-agent-lab/runs/step1-stub-nonetwork/falconry__falcon__2540/review.md",
+    "--json-output",
+    "/home/user/Projects/pr-agent-lab/runs/step1-stub-nonetwork/falconry__falcon__2540/review.json",
+    "review",
+    "--plain_diff.title=feat(request): add delimiter support to get_param_as_list",
+    "--plain_diff.description=<PR body>"
+  ],
+  "note": "Rehearsal only. The review text and the usage numbers come from scripts/stub_llm.py, not from a model. Latency excludes any model time."
+}

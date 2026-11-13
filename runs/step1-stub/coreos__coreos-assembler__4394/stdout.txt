@@ -1,0 +1,40 @@
+[32m2026-11-12 20:03:57.262[0m | [33m[1mWARNING [0m | [36mpr_agent.custom_merge_loader[0m:[36mload[0m:[36m67[0m - [33m[1mSettings file not found: /home/user/Projects/pr-agent-lab/upstream/pr-agent/pr_agent/settings/.secrets.toml. Skipping it.[0m
+[32m2026-11-12 20:03:57.262[0m | [33m[1mWARNING [0m | [36mpr_agent.custom_merge_loader[0m:[36mload[0m:[36m67[0m - [33m[1mSettings file not found: /home/user/Projects/pr-agent-lab/upstream/pr-agent/pr_agent/settings_prod/.secrets.toml. Skipping it.[0m
+[32m2026-11-12 20:03:57.361[0m | [1mINFO    [0m | [36mpr_agent.algo.utils[0m:[36mupdate_settings_from_args[0m:[36m924[0m - [1mUpdated setting PLAIN_DIFF.TITLE to: "osubild: drop backport patch for setting xfs agcount"[0m
+[32m2026-11-12 20:03:57.362[0m | [1mINFO    [0m | [36mpr_agent.algo.utils[0m:[36mupdate_settings_from_args[0m:[36m924[0m - [1mUpdated setting PLAIN_DIFF.DESCRIPTION to: "This was released in OSBuild v166 and is now in the RPM in Fedora 43."[0m
+[32m2026-11-12 20:03:57.639[0m | [33m[1mWARNING [0m | [36mpr_agent.algo.repo_context[0m:[36m_provider_supports_repo_context[0m:[36m160[0m - [33m[1mrepo_context_files is configured, but PlainDiffGitProvider does not support repository file fetching; skipping repo context[0m
+[32m2026-11-12 20:03:57.641[0m | [1mINFO    [0m | [36mpr_agent.commands.pr_reviewer[0m:[36m_run_review[0m:[36m695[0m - [1mReviewing PR: local_diff ...[0m
+[32m2026-11-12 20:03:57.662[0m | [1mINFO    [0m | [36mpr_agent.algo.pr_processing[0m:[36mget_pr_diff[0m:[36m246[0m - [1mPR main language: Shell[0m
+[32m2026-11-12 20:03:57.663[0m | [1mINFO    [0m | [36mpr_agent.algo.pr_processing[0m:[36mget_pr_diff[0m:[36m266[0m - [1mTokens: 1952, total tokens under limit: 32000, returning full diff.[0m
+
+[1;31mProvider List: https://docs.litellm.ai/docs/providers[0m
+
+[32m2026-11-12 20:03:57.790[0m | [1mINFO    [0m | [36mpr_agent.commands.pr_reviewer[0m:[36m_publish_key_issues_as_inline_comments[0m:[36m2097[0m - [1mInline key-issue publishing is not verifiable for this provider; keeping findings in the review summary[0m
+## PR Reviewer Guide 🔍
+
+Here are some key observations to aid the review process:
+
+<table>
+<tr><td>⚠️&nbsp;<strong>Risk checks:</strong> 1 finding(s) detected<br>
+<strong>Deleted files (1):</strong> <code>src/0001-stages-mkfs.xfs-support-setting-agcount.patch</code></td></tr>
+<tr><td>⏱️&nbsp;<strong>Estimated effort to review</strong>: 1 🔵⚪⚪⚪⚪</td></tr>
+<tr><td>🧪&nbsp;<strong>No relevant tests</strong></td></tr>
+<tr><td>🔒&nbsp;<strong>No security concerns identified</strong></td></tr>
+<tr><td>⚡&nbsp;<strong>Recommended focus areas for review</strong><br><br>
+
+<strong>STUB OUTPUT - NOT A MODEL REVIEW</strong><br>This finding was returned by scripts/stub_llm.py to rehearse the pipeline. No model was called.
+
+</td></tr>
+</table>
+
+<hr>
+<details> <summary><strong>⚙️ Agent run details</strong></summary>
+
+- Model: openai/lab-stub
+- Tokens: 2,086 in / 100 out / 2,186 total
+- Time cost: 0.1s
+- AI calls: 1
+- Estimated API cost: unavailable (no calls could be priced)
+
+</details>
+

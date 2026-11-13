@@ -1,0 +1,11 @@
+{
+  "pr_review_prompt.system": {
+    "template_chars": 17332,
+    "approx_tokens_chars_div_4": 4333
+  },
+  "pr_review_prompt.user": {
+    "template_chars": 5698,
+    "approx_tokens_chars_div_4": 1424
+  },
+  "note": "Raw Jinja template sizes before rendering; conditional sections mean the rendered prompt is smaller than the template. Not tokenizer output."
+}

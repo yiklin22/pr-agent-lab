@@ -1,0 +1,15 @@
+{
+  "pr_url": "https://github.com/coreos/coreos-assembler/pull/4394",
+  "slug": "coreos__coreos-assembler__4394",
+  "title": "osubild: drop backport patch for setting xfs agcount",
+  "description": "This was released in OSBuild v166 and is now in the RPM in Fedora 43.",
+  "state": "closed",
+  "merged_at": "2025-12-16T03:09:45Z",
+  "base_sha": "81ddb30804c75b4b70a8af265a3f281a43e732b5",
+  "head_sha": "b934d3ad34be0625bb34c31e67e296852d825189",
+  "changed_files": 2,
+  "additions": 0,
+  "deletions": 58,
+  "fetched_at": "2026-11-12T12:01:35+00:00",
+  "fetched_with_credentials": false
+}

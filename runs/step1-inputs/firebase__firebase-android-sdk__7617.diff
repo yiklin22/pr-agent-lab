@@ -1,0 +1,779 @@
+diff --git a/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/DataConnectPathSegment.kt b/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/DataConnectPathSegment.kt
+index fc32189b91c..919d0ad5881 100644
+--- a/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/DataConnectPathSegment.kt
++++ b/firebase-dataconnect/src/main/kotlin/com/google/firebase/dataconnect/DataConnectPathSegment.kt
+@@ -57,6 +57,8 @@ public sealed interface DataConnectPathSegment {
+ 
+ internal typealias DataConnectPath = List<DataConnectPathSegment>
+ 
++internal typealias MutableDataConnectPath = MutableList<DataConnectPathSegment>
++
+ internal fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
+   appendPathStringTo(this)
+ }
+diff --git a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/DataConnectPathSegmentTestExts.kt b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/DataConnectPathSegmentTestExts.kt
+new file mode 100644
+index 00000000000..5b7ff8d52a3
+--- /dev/null
++++ b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/DataConnectPathSegmentTestExts.kt
+@@ -0,0 +1,139 @@
++/*
++ * Copyright 2025 Google LLC
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++package com.google.firebase.dataconnect.testutil
++
++import com.google.firebase.dataconnect.DataConnectPathSegment
++import com.google.protobuf.Value
++
++// NOTE: Many of the functions below were copied verbatim from
++// src/main/kotlin/com/google/firebase/dataconnect/DataConnectPathSegment.kt
++// If those functions ever become public, then delete the corresponding functions in this file
++// and use the official, public functions instead.
++
++typealias DataConnectPath = List<DataConnectPathSegment>
++
++typealias MutableDataConnectPath = MutableList<DataConnectPathSegment>
++
++fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
++  appendPathStringTo(this)
++}
++
++fun <T : DataConnectPathSegment> List<T>.appendPathStringTo(sb: StringBuilder) {
++  forEachIndexed { segmentIndex, segment ->
++    when (segment) {
++      is DataConnectPathSegment.Field -> {
++        if (segmentIndex != 0) {
++          sb.append('.')
++        }
++        sb.append('"')
++        sb.append(segment.field)
++        sb.append('"')
++      }
++      is DataConnectPathSegment.ListIndex -> {
++        sb.append('[')
++        sb.append(segment.index)
++        sb.append(']')
++      }
++    }
++  }
++}
++
++fun MutableList<in DataConnectPathSegment.Field>.addField(
++  field: String
++): DataConnectPathSegment.Field = DataConnectPathSegment.Field(field).also { add(it) }
++
++fun MutableList<in DataConnectPathSegment.ListIndex>.addListIndex(
++  index: Int
++): DataConnectPathSegment.ListIndex = DataConnectPathSegment.ListIndex(index).also { add(it) }
++
++inline fun <T> MutableList<in DataConnectPathSegment.Field>.withAddedField(
++  field: String,
++  block: () -> T
++): T = withAddedPathSegment(DataConnectPathSegment.Field(field), block)
++
++inline fun <T> MutableList<in DataConnectPathSegment.ListIndex>.withAddedListIndex(
++  index: Int,
++  block: () -> T
++): T = withAddedPathSegment(DataConnectPathSegment.ListIndex(index), block)
++
++inline fun <T, S : DataConnectPathSegment> MutableList<in S>.withAddedPathSegment(
++  pathSegment: S,
++  block: () -> T
++): T {
++  add(pathSegment)
++  try {
++    return block()
++  } finally {
++    val removedSegment = removeLastOrNull()
++    check(removedSegment === pathSegment) {
++      "internal error k6mhm2tqvy: removed $removedSegment, but expected $pathSegment"
++    }
++  }
++}
++
++fun List<DataConnectPathSegment>.withAddedField(field: String): List<DataConnectPathSegment> =
++  withAddedPathSegment(DataConnectPathSegment.Field(field))
++
++fun List<DataConnectPathSegment>.withAddedListIndex(index: Int): List<DataConnectPathSegment> =
++  withAddedPathSegment(DataConnectPathSegment.ListIndex(index))
++
++fun List<DataConnectPathSegment>.withAddedPathSegment(
++  pathSegment: DataConnectPathSegment
++): List<DataConnectPathSegment> = buildList {
++  addAll(this@withAddedPathSegment)
++  add(pathSegment)
++}
++
++data class DataConnectPathValuePair(val path: DataConnectPath, val value: Value)
++
++object DataConnectPathValuePairPathComparator : Comparator<DataConnectPathValuePair> {
++  override fun compare(o1: DataConnectPathValuePair, o2: DataConnectPathValuePair): Int =
++    DataConnectPathComparator.compare(o1.path, o2.path)
++}
++
++object DataConnectPathComparator : Comparator<DataConnectPath> {
++  override fun compare(o1: DataConnectPath, o2: DataConnectPath): Int {
++    val size = o1.size.coerceAtMost(o2.size)
++    repeat(size) {
++      val segmentComparisonResult = DataConnectPathSegmentComparator.compare(o1[it], o2[it])
++      if (segmentComparisonResult != 0) {
++        return segmentComparisonResult
++      }
++    }
++    return o1.size.compareTo(o2.size)
++  }
++}
++
++object DataConnectPathSegmentComparator : Comparator<DataConnectPathSegment> {
++  override fun compare(o1: DataConnectPathSegment, o2: DataConnectPathSegment): Int =
++    when (o1) {
++      is DataConnectPathSegment.Field ->
++        when (o2) {
++          is DataConnectPathSegment.Field -> o1.field.compareTo(o2.field)
++          is DataConnectPathSegment.ListIndex -> -1
++        }
++      is DataConnectPathSegment.ListIndex ->
++        when (o2) {
++          is DataConnectPathSegment.Field -> 1
++          is DataConnectPathSegment.ListIndex -> o1.index.compareTo(o2.index)
++        }
++    }
++}
++
++fun DataConnectPathSegment?.fieldOrThrow(): String = (this as DataConnectPathSegment.Field).field
++
++fun DataConnectPathSegment?.listIndexOrThrow(): Int =
++  (this as DataConnectPathSegment.ListIndex).index
+diff --git a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiff.kt b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiff.kt
+index 25821a4101d..1d9a92c27a9 100644
+--- a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiff.kt
++++ b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiff.kt
+@@ -71,7 +71,7 @@ fun valueFastEqual(value1: Value, value2: Value): Boolean {
+   }
+ }
+ 
+-data class DifferencePathPair<T : Difference>(val path: ProtoValuePath, val difference: T)
++data class DifferencePathPair<T : Difference>(val path: DataConnectPath, val difference: T)
+ 
+ sealed interface Difference {
+   data class KindCase(val value1: Value, val value2: Value) : Difference
+@@ -87,7 +87,7 @@ sealed interface Difference {
+ fun structDiff(
+   struct1: Struct,
+   struct2: Struct,
+-  path: MutableProtoValuePath = mutableListOf(),
++  path: MutableDataConnectPath = mutableListOf(),
+   differences: MutableList<DifferencePathPair<*>> = mutableListOf(),
+ ): MutableList<DifferencePathPair<*>> {
+   val map1 = struct1.fieldsMap
+@@ -97,7 +97,7 @@ fun structDiff(
+     if (key !in map2) {
+       differences.add(path, Difference.StructMissingKey(key, value))
+     } else {
+-      path.withAppendedStructKey(key) { valueDiff(value, map2[key]!!, path, differences) }
++      path.withAddedField(key) { valueDiff(value, map2[key]!!, path, differences) }
+     }
+   }
+ 
+@@ -113,13 +113,13 @@ fun structDiff(
+ fun listValueDiff(
+   listValue1: ListValue,
+   listValue2: ListValue,
+-  path: MutableProtoValuePath = mutableListOf(),
++  path: MutableDataConnectPath = mutableListOf(),
+   differences: MutableList<DifferencePathPair<*>> = mutableListOf(),
+ ): MutableList<DifferencePathPair<*>> {
+   repeat(listValue1.valuesCount.coerceAtMost(listValue2.valuesCount)) {
+     val value1 = listValue1.getValues(it)
+     val value2 = listValue2.getValues(it)
+-    path.withAppendedListIndex(it) { valueDiff(value1, value2, path, differences) }
++    path.withAddedListIndex(it) { valueDiff(value1, value2, path, differences) }
+   }
+ 
+   if (listValue1.valuesCount > listValue2.valuesCount) {
+@@ -138,7 +138,7 @@ fun listValueDiff(
+ fun valueDiff(
+   value1: Value,
+   value2: Value,
+-  path: MutableProtoValuePath = mutableListOf(),
++  path: MutableDataConnectPath = mutableListOf(),
+   differences: MutableList<DifferencePathPair<*>> = mutableListOf(),
+ ): MutableList<DifferencePathPair<*>> {
+   if (value1.kindCase != value2.kindCase) {
+@@ -171,7 +171,7 @@ fun valueDiff(
+ }
+ 
+ private fun MutableCollection<DifferencePathPair<*>>.add(
+-  path: MutableProtoValuePath,
++  path: MutableDataConnectPath,
+   difference: Difference
+ ) {
+   add(DifferencePathPair(path.toList(), difference))
+@@ -188,7 +188,7 @@ fun Collection<DifferencePathPair<*>>.toSummaryString(): String = buildString {
+       append('\n')
+       append(index + 1)
+       append(": ")
+-      appendPathString(path)
++      path.appendPathStringTo(this)
+       append('=')
+       append(difference)
+     }
+diff --git a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoMap.kt b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoMap.kt
+index 35f996cc127..4d95c2f6600 100644
+--- a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoMap.kt
++++ b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoMap.kt
+@@ -19,7 +19,7 @@ import com.google.protobuf.ListValue
+ import com.google.protobuf.Struct
+ import com.google.protobuf.Value
+ 
+-fun Struct.map(callback: (path: ProtoValuePath, value: Value) -> Value?): Struct {
++fun Struct.map(callback: (path: DataConnectPath, value: Value) -> Value?): Struct {
+   val mappedValue = toValueProto().map(callback)
+   checkNotNull(mappedValue) {
+     "callback returned null for root, " +
+@@ -32,7 +32,7 @@ fun Struct.map(callback: (path: ProtoValuePath, value: Value) -> Value?): Struct
+   return mappedValue.structValue
+ }
+ 
+-fun ListValue.map(callback: (path: ProtoValuePath, value: Value) -> Value?): ListValue {
++fun ListValue.map(callback: (path: DataConnectPath, value: Value) -> Value?): ListValue {
+   val mappedValue = toValueProto().map(callback)
+   checkNotNull(mappedValue) {
+     "callback returned null for root, " +
+@@ -46,7 +46,7 @@ fun ListValue.map(callback: (path: ProtoValuePath, value: Value) -> Value?): Lis
+ }
+ 
+ fun <V : Value?> Value.map(
+-  callback: (path: ProtoValuePath, value: Value) -> V,
++  callback: (path: DataConnectPath, value: Value) -> V,
+ ): V =
+   mapRecursive(
+     value = this,
+@@ -56,15 +56,15 @@ fun <V : Value?> Value.map(
+ 
+ private fun <V : Value?> mapRecursive(
+   value: Value,
+-  path: MutableProtoValuePath,
+-  callback: (path: ProtoValuePath, value: Value) -> V,
++  path: MutableDataConnectPath,
++  callback: (path: DataConnectPath, value: Value) -> V,
+ ): V {
+   val processedValue: Value =
+     if (value.isStructValue) {
+       Struct.newBuilder().let { structBuilder ->
+         value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
+           val mappedChildValue =
+-            path.withAppendedStructKey(key) { mapRecursive(childValue, path, callback) }
++            path.withAddedField(key) { mapRecursive(childValue, path, callback) }
+           if (mappedChildValue !== null) {
+             structBuilder.putFields(key, mappedChildValue)
+           }
+@@ -75,7 +75,7 @@ private fun <V : Value?> mapRecursive(
+       ListValue.newBuilder().let { listValueBuilder ->
+         value.listValue.valuesList.forEachIndexed { index, childValue ->
+           val mappedChildValue =
+-            path.withAppendedListIndex(index) { mapRecursive(childValue, path, callback) }
++            path.withAddedListIndex(index) { mapRecursive(childValue, path, callback) }
+           if (mappedChildValue !== null) {
+             listValueBuilder.addValues(mappedChildValue)
+           }
+diff --git a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoValuePath.kt b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoValuePath.kt
+deleted file mode 100644
+index cc5f3a743e2..00000000000
+--- a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoValuePath.kt
++++ /dev/null
+@@ -1,106 +0,0 @@
+-/*
+- * Copyright 2025 Google LLC
+- *
+- * Licensed under the Apache License, Version 2.0 (the "License");
+- * you may not use this file except in compliance with the License.
+- * You may obtain a copy of the License at
+- *
+- *      http://www.apache.org/licenses/LICENSE-2.0
+- *
+- * Unless required by applicable law or agreed to in writing, software
+- * distributed under the License is distributed on an "AS IS" BASIS,
+- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+- * See the License for the specific language governing permissions and
+- * limitations under the License.
+- */
+-package com.google.firebase.dataconnect.testutil
+-
+-import com.google.protobuf.Value
+-import java.util.Objects
+-import kotlin.contracts.ExperimentalContracts
+-import kotlin.contracts.contract
+-
+-sealed interface ProtoValuePathComponent {
+-
+-  class StructKey(val key: String) : ProtoValuePathComponent {
+-    override fun equals(other: Any?) = other is StructKey && other.key == key
+-    override fun hashCode() = Objects.hash(StructKey::class.java, key)
+-    override fun toString() = "StructKey(\"$key\")"
+-  }
+-
+-  class ListIndex(val index: Int) : ProtoValuePathComponent {
+-    override fun equals(other: Any?) = other is ListIndex && other.index == index
+-    override fun hashCode() = Objects.hash(ListIndex::class.java, index)
+-    override fun toString() = "ListIndex($index)"
+-  }
+-}
+-
+-typealias ProtoValuePath = List<ProtoValuePathComponent>
+-
+-typealias MutableProtoValuePath = MutableList<ProtoValuePathComponent>
+-
+-data class ProtoValuePathPair(val path: ProtoValuePath, val value: Value)
+-
+-fun ProtoValuePath.withAppendedListIndex(index: Int): ProtoValuePath =
+-  withAppendedComponent(ProtoValuePathComponent.ListIndex(index))
+-
+-fun ProtoValuePath.withAppendedStructKey(key: String): ProtoValuePath =
+-  withAppendedComponent(ProtoValuePathComponent.StructKey(key))
+-
+-fun ProtoValuePath.withAppendedComponent(component: ProtoValuePathComponent): ProtoValuePath =
+-  buildList {
+-    addAll(this@withAppendedComponent)
+-    add(component)
+-  }
+-
+-fun <T> MutableProtoValuePath.withAppendedListIndex(index: Int, block: () -> T): T =
+-  withAppendedComponent(ProtoValuePathComponent.ListIndex(index), block)
+-
+-fun <T> MutableProtoValuePath.withAppendedStructKey(key: String, block: () -> T): T =
+-  withAppendedComponent(ProtoValuePathComponent.StructKey(key), block)
+-
+-fun <T> MutableProtoValuePath.withAppendedComponent(
+-  component: ProtoValuePathComponent,
+-  block: () -> T
+-): T {
+-  val originalSize = size
+-  add(component)
+-  try {
+-    return block()
+-  } finally {
+-    val removedComponent = removeLastOrNull()
+-    check(removedComponent === component)
+-    check(size == originalSize)
+-  }
+-}
+-
+-@OptIn(ExperimentalContracts::class)
+-fun ProtoValuePathComponent?.isStructKey(): Boolean {
+-  contract { returns(true) implies (this@isStructKey is ProtoValuePathComponent.StructKey) }
+-  return this is ProtoValuePathComponent.StructKey
+-}
+-
+-fun ProtoValuePathComponent?.structKeyOrThrow(): String =
+-  (this as ProtoValuePathComponent.StructKey).key
+-
+-fun ProtoValuePath.toPathString(): String = buildString { appendPathString(this@toPathString) }
+-
+-fun StringBuilder.appendPathString(path: ProtoValuePath): StringBuilder = apply {
+-  path.forEach { pathComponent ->
+-    when (pathComponent) {
+-      is ProtoValuePathComponent.StructKey -> {
+-        if (isNotEmpty()) {
+-          append('.')
+-        }
+-        append('"')
+-        append(pathComponent.key)
+-        append('"')
+-      }
+-      is ProtoValuePathComponent.ListIndex -> {
+-        append('[')
+-        append(pathComponent.index)
+-        append(']')
+-      }
+-    }
+-  }
+-}
+diff --git a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalk.kt b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalk.kt
+index 59790149cdd..d682268167e 100644
+--- a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalk.kt
++++ b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalk.kt
+@@ -19,13 +19,13 @@ import com.google.protobuf.ListValue
+ import com.google.protobuf.Struct
+ import com.google.protobuf.Value
+ 
+-fun Struct.walk(includeSelf: Boolean = false): Sequence<ProtoValuePathPair> =
++fun Struct.walk(includeSelf: Boolean = false): Sequence<DataConnectPathValuePair> =
+   toValueProto().walk(includeSelf = includeSelf)
+ 
+-fun ListValue.walk(includeSelf: Boolean = false): Sequence<ProtoValuePathPair> =
++fun ListValue.walk(includeSelf: Boolean = false): Sequence<DataConnectPathValuePair> =
+   toValueProto().walk(includeSelf = includeSelf)
+ 
+-fun Value.walk(includeSelf: Boolean = true): Sequence<ProtoValuePathPair> =
++fun Value.walk(includeSelf: Boolean = true): Sequence<DataConnectPathValuePair> =
+   valueWalk(this, includeSelf = includeSelf)
+ 
+ fun Struct.walkValues(includeSelf: Boolean = false): Sequence<Value> =
+@@ -38,8 +38,8 @@ fun Value.walkValues(includeSelf: Boolean = true): Sequence<Value> =
+   walk(includeSelf = includeSelf).map { it.value }
+ 
+ private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
+-  val rootProtoValuePathPair = ProtoValuePathPair(emptyList(), value)
+-  val queue = ArrayDeque<ProtoValuePathPair>()
++  val rootProtoValuePathPair = DataConnectPathValuePair(emptyList(), value)
++  val queue = ArrayDeque<DataConnectPathValuePair>()
+   queue.add(rootProtoValuePathPair)
+ 
+   while (queue.isNotEmpty()) {
+@@ -52,11 +52,11 @@ private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
+ 
+     if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
+       value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
+-        queue.add(ProtoValuePathPair(path.withAppendedStructKey(key), childValue))
++        queue.add(DataConnectPathValuePair(path.withAddedField(key), childValue))
+       }
+     } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
+       value.listValue.valuesList.forEachIndexed { index, childValue ->
+-        queue.add(ProtoValuePathPair(path.withAppendedListIndex(index), childValue))
++        queue.add(DataConnectPathValuePair(path.withAddedListIndex(index), childValue))
+       }
+     }
+   }
+diff --git a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/proto.kt b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/proto.kt
+index 1a2d8e7aced..00c60237009 100644
+--- a/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/proto.kt
++++ b/firebase-dataconnect/testutil/src/main/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/proto.kt
+@@ -18,11 +18,11 @@
+ 
+ package com.google.firebase.dataconnect.testutil.property.arbitrary
+ 
+-import com.google.firebase.dataconnect.testutil.ProtoValuePath
+-import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
++import com.google.firebase.dataconnect.testutil.DataConnectPath
++import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
+ import com.google.firebase.dataconnect.testutil.toValueProto
+-import com.google.firebase.dataconnect.testutil.withAppendedListIndex
+-import com.google.firebase.dataconnect.testutil.withAppendedStructKey
++import com.google.firebase.dataconnect.testutil.withAddedField
++import com.google.firebase.dataconnect.testutil.withAddedListIndex
+ import com.google.protobuf.ListValue
+ import com.google.protobuf.NullValue
+ import com.google.protobuf.Struct
+@@ -52,7 +52,7 @@ object ProtoArb {
+   data class StructInfo(
+     val struct: Struct,
+     val depth: Int,
+-    val descendants: List<ProtoValuePathPair>,
++    val descendants: List<DataConnectPathValuePair>,
+   ) {
+     fun toValueProto(): Value = struct.toValueProto()
+   }
+@@ -60,7 +60,7 @@ object ProtoArb {
+   data class ListValueInfo(
+     val listValue: ListValue,
+     val depth: Int,
+-    val descendants: List<ProtoValuePathPair>,
++    val descendants: List<DataConnectPathValuePair>,
+   ) {
+     fun toValueProto(): Value = listValue.toValueProto()
+   }
+@@ -300,7 +300,7 @@ private class StructArb(
+ 
+   fun sample(
+     rs: RandomSource,
+-    path: ProtoValuePath,
++    path: DataConnectPath,
+     depth: Int,
+     sizeEdgeCaseProbability: Float,
+     keyEdgeCaseProbability: Float,
+@@ -315,7 +315,7 @@ private class StructArb(
+     }
+     val forcedDepthIndex = if (size == 0 || depth <= 1) -1 else rs.random.nextInt(size)
+ 
+-    fun RandomSource.nextNestedValue(depth: Int, curPath: ProtoValuePath) =
++    fun RandomSource.nextNestedValue(depth: Int, curPath: DataConnectPath) =
+       nextNestedValue(
+         structArb = this@StructArb,
+         listValueArb = this@StructArb.listValueArb,
+@@ -327,7 +327,7 @@ private class StructArb(
+         nestedProbability = nestedProbability,
+       )
+ 
+-    val descendants = mutableListOf<ProtoValuePathPair>()
++    val descendants = mutableListOf<DataConnectPathValuePair>()
+     fun NextNestedValueResult.extractValue(): Value {
+       descendants.addAll(this.descendants)
+       return value
+@@ -339,7 +339,7 @@ private class StructArb(
+       if (structBuilder.containsFields(key)) {
+         continue
+       }
+-      val curPath = path.withAppendedStructKey(key)
++      val curPath = path.withAddedField(key)
+       val value =
+         if (depth > 1 && structBuilder.fieldsCount == forcedDepthIndex) {
+           rs.nextNestedValue(depth - 1, curPath).extractValue()
+@@ -349,7 +349,7 @@ private class StructArb(
+           scalarValueArb.next(rs, valueEdgeCaseProbability)
+         }
+ 
+-      descendants.add(ProtoValuePathPair(curPath, value))
++      descendants.add(DataConnectPathValuePair(curPath, value))
+       structBuilder.putFields(key, value)
+     }
+ 
+@@ -459,7 +459,7 @@ private class ListValueArb(
+ 
+   fun sample(
+     rs: RandomSource,
+-    path: ProtoValuePath,
++    path: DataConnectPath,
+     depth: Int,
+     sizeEdgeCaseProbability: Float,
+     structKeyEdgeCaseProbability: Float,
+@@ -468,7 +468,7 @@ private class ListValueArb(
+   ): ProtoArb.ListValueInfo {
+     require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
+ 
+-    fun RandomSource.nextNestedValue(depth: Int, curPath: ProtoValuePath) =
++    fun RandomSource.nextNestedValue(depth: Int, curPath: DataConnectPath) =
+       nextNestedValue(
+         structArb = this@ListValueArb.structArb,
+         listValueArb = this@ListValueArb,
+@@ -487,14 +487,14 @@ private class ListValueArb(
+ 
+     val forcedDepthIndex = if (size == 0 || depth <= 1) -1 else rs.random.nextInt(size)
+     val values = mutableListOf<Value>()
+-    val descendants = mutableListOf<ProtoValuePathPair>()
++    val descendants = mutableListOf<DataConnectPathValuePair>()
+     fun NextNestedValueResult.extractValue(): Value {
+       descendants.addAll(this.descendants)
+       return value
+     }
+ 
+     repeat(size) { index ->
+-      val curPath = path.withAppendedListIndex(index)
++      val curPath = path.withAddedListIndex(index)
+       val value =
+         if (depth > 1 && index == forcedDepthIndex) {
+           rs.nextNestedValue(depth - 1, curPath).extractValue()
+@@ -504,7 +504,7 @@ private class ListValueArb(
+           scalarValueArb.next(rs, valueEdgeCaseProbability)
+         }
+ 
+-      descendants.add(ProtoValuePathPair(curPath, value))
++      descendants.add(DataConnectPathValuePair(curPath, value))
+       values.add(value)
+     }
+ 
+@@ -577,7 +577,7 @@ fun Value.maxDepth(): Int =
+ 
+ private class NextNestedValueResult(
+   val value: Value,
+-  val descendants: List<ProtoValuePathPair>,
++  val descendants: List<DataConnectPathValuePair>,
+ )
+ 
+ private enum class NextNestedValueCase {
+@@ -588,7 +588,7 @@ private enum class NextNestedValueCase {
+ private fun RandomSource.nextNestedValue(
+   structArb: StructArb,
+   listValueArb: ListValueArb,
+-  path: ProtoValuePath,
++  path: DataConnectPath,
+   depth: Int,
+   sizeEdgeCaseProbability: Float,
+   structKeyEdgeCaseProbability: Float,
+diff --git a/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiffUnitTest.kt b/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiffUnitTest.kt
+index e9ddfface54..4b6e164f219 100644
+--- a/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiffUnitTest.kt
++++ b/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoDiffUnitTest.kt
+@@ -18,6 +18,7 @@
+ 
+ package com.google.firebase.dataconnect.testutil
+ 
++import com.google.firebase.dataconnect.DataConnectPathSegment
+ import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+ import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
+ import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
+@@ -105,9 +106,9 @@ class ProtoDiffUnitTest {
+     val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
+ 
+     verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
+-      val structPaths: Set<ProtoValuePath> =
++      val structPaths: Set<DataConnectPath> =
+         struct1.walk(includeSelf = true).filter { it.value.isStructValue }.map { it.path }.toSet()
+-      val valuesToAddByPath: Map<ProtoValuePath, MutableList<Value>> = buildMap {
++      val valuesToAddByPath: Map<DataConnectPath, MutableList<Value>> = buildMap {
+         repeat(keyCount) {
+           val path = structPaths.random(randomSource().random)
+           getOrPut(path) { mutableListOf() }.add(valueArb.bind())
+@@ -146,7 +147,7 @@ class ProtoDiffUnitTest {
+         replaceRandomValues(
+           struct1,
+           keyCount,
+-          filter = { it.path.lastOrNull().isStructKey() },
++          filter = { it.path.lastOrNull() is DataConnectPathSegment.Field },
+           replacementValue = { _, _ -> null },
+         )
+       assume(replaceResult.replacements.isNotEmpty())
+@@ -156,7 +157,7 @@ class ProtoDiffUnitTest {
+           DifferencePathPair(
+             replacement.path.dropLast(1),
+             Difference.StructMissingKey(
+-              replacement.path.last().structKeyOrThrow(),
++              replacement.path.last().fieldOrThrow(),
+               replacement.oldValue
+             )
+           )
+@@ -294,9 +295,9 @@ class ProtoDiffUnitTest {
+ 
+     verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
+       ->
+-      val listPaths: Set<ProtoValuePath> =
++      val listPaths: Set<DataConnectPath> =
+         listValue1.walk(includeSelf = true).filter { it.value.isListValue }.map { it.path }.toSet()
+-      val valuesToAddByPath: Map<ProtoValuePath, MutableList<Value>> = buildMap {
++      val valuesToAddByPath: Map<DataConnectPath, MutableList<Value>> = buildMap {
+         repeat(itemCount) {
+           val path = listPaths.random(randomSource().random)
+           getOrPut(path) { mutableListOf() }.add(valueArb.bind())
+@@ -512,14 +513,14 @@ class ProtoDiffUnitTest {
+     fun PropertyContext.randomPathsToReplace(
+       value: Value,
+       maxNumPaths: Int,
+-      filter: (ProtoValuePathPair) -> Boolean = { true },
+-    ): List<ProtoValuePath> = randomSource().random.pathsToReplace(value, maxNumPaths, filter)
++      filter: (DataConnectPathValuePair) -> Boolean = { true },
++    ): List<DataConnectPath> = randomSource().random.pathsToReplace(value, maxNumPaths, filter)
+ 
+     fun Random.pathsToReplace(
+       value: Value,
+       maxNumPaths: Int,
+-      filter: (ProtoValuePathPair) -> Boolean = { true },
+-    ): List<ProtoValuePath> {
++      filter: (DataConnectPathValuePair) -> Boolean = { true },
++    ): List<DataConnectPath> {
+       val candidatePaths =
+         value.walk(includeSelf = false).filter(filter).map { it.path }.toMutableList()
+ 
+@@ -546,7 +547,7 @@ class ProtoDiffUnitTest {
+       val replacements: List<Replacement<V>>,
+     ) {
+       data class Replacement<V : Value?>(
+-        val path: ProtoValuePath,
++        val path: DataConnectPath,
+         val oldValue: Value,
+         val newValue: V,
+       )
+@@ -555,8 +556,8 @@ class ProtoDiffUnitTest {
+     fun <V : Value?> PropertyContext.replaceRandomValues(
+       struct: Struct,
+       maxNumPaths: Int,
+-      filter: (ProtoValuePathPair) -> Boolean = { true },
+-      replacementValue: (path: ProtoValuePath, oldValue: Value) -> V,
++      filter: (DataConnectPathValuePair) -> Boolean = { true },
++      replacementValue: (path: DataConnectPath, oldValue: Value) -> V,
+     ): ReplaceRandomValuesResult<Struct, V> {
+       val pathsToReplace = randomPathsToReplace(struct.toValueProto(), maxNumPaths, filter)
+ 
+@@ -578,8 +579,8 @@ class ProtoDiffUnitTest {
+     fun <V : Value?> PropertyContext.replaceRandomValues(
+       listValue: ListValue,
+       maxNumPaths: Int,
+-      filter: (ProtoValuePathPair) -> Boolean = { true },
+-      replacementValue: (path: ProtoValuePath, oldValue: Value) -> V,
++      filter: (DataConnectPathValuePair) -> Boolean = { true },
++      replacementValue: (path: DataConnectPath, oldValue: Value) -> V,
+     ): ReplaceRandomValuesResult<ListValue, V> {
+       val pathsToReplace = randomPathsToReplace(listValue.toValueProto(), maxNumPaths, filter)
+ 
+diff --git a/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalkUnitTest.kt b/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalkUnitTest.kt
+index 4701782dd17..bb39c1e8644 100644
+--- a/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalkUnitTest.kt
++++ b/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/ProtoWalkUnitTest.kt
+@@ -45,7 +45,7 @@ class ProtoWalkUnitTest {
+   fun `walk Value scalars`() = runTest {
+     checkAll(propTestConfig, Arb.proto.scalarValue()) { value: Value ->
+       val walkResult = value.walk().toList()
+-      walkResult.shouldContainExactly(ProtoValuePathPair(path = emptyList(), value = value))
++      walkResult.shouldContainExactly(DataConnectPathValuePair(path = emptyList(), value = value))
+     }
+   }
+ 
+@@ -55,7 +55,7 @@ class ProtoWalkUnitTest {
+       val walkResult = value.walk().toList()
+ 
+       val expectedWalkResult = buildList {
+-        add(ProtoValuePathPair(emptyList(), value))
++        add(DataConnectPathValuePair(emptyList(), value))
+         addAll(value.listValue.walk().toList())
+       }
+       walkResult shouldContainExactlyInAnyOrder expectedWalkResult
+@@ -68,7 +68,7 @@ class ProtoWalkUnitTest {
+       val walkResult = value.walk().toList()
+ 
+       val expectedWalkResult = buildList {
+-        add(ProtoValuePathPair(emptyList(), value))
++        add(DataConnectPathValuePair(emptyList(), value))
+         addAll(value.structValue.walk().toList())
+       }
+       walkResult shouldContainExactlyInAnyOrder expectedWalkResult
+diff --git a/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/protoUnitTest.kt b/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/protoUnitTest.kt
+index 12ef02eeeaa..cf2a56c7b54 100644
+--- a/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/protoUnitTest.kt
++++ b/firebase-dataconnect/testutil/src/test/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/protoUnitTest.kt
+@@ -16,8 +16,8 @@
+ 
+ package com.google.firebase.dataconnect.testutil.property.arbitrary
+ 
+-import com.google.firebase.dataconnect.testutil.ProtoValuePathComponent
+-import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
++import com.google.firebase.dataconnect.DataConnectPathSegment
++import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
+ import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+ import com.google.firebase.dataconnect.testutil.isListValue
+ import com.google.firebase.dataconnect.testutil.isStructValue
+@@ -327,9 +327,9 @@ class protoUnitTest {
+         false
+       }
+ 
+-    fun Value.calculateExpectedDescendants(): List<ProtoValuePathPair> = buildList {
+-      val queue: MutableList<ProtoValuePathPair> = mutableListOf()
+-      queue.add(ProtoValuePathPair(emptyList(), this@calculateExpectedDescendants))
++    fun Value.calculateExpectedDescendants(): List<DataConnectPathValuePair> = buildList {
++      val queue: MutableList<DataConnectPathValuePair> = mutableListOf()
++      queue.add(DataConnectPathValuePair(emptyList(), this@calculateExpectedDescendants))
+ 
+       while (queue.isNotEmpty()) {
+         val entry = queue.removeFirst()
+@@ -342,17 +342,17 @@ class protoUnitTest {
+           value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
+             val childPath = buildList {
+               addAll(path)
+-              add(ProtoValuePathComponent.StructKey(key))
++              add(DataConnectPathSegment.Field(key))
+             }
+-            queue.add(ProtoValuePathPair(childPath, childValue))
++            queue.add(DataConnectPathValuePair(childPath, childValue))
+           }
+         } else if (value.isListValue) {
+           value.listValue.valuesList.forEachIndexed { index, childValue ->
+             val childPath = buildList {
+               addAll(path)
+-              add(ProtoValuePathComponent.ListIndex(index))
++              add(DataConnectPathSegment.ListIndex(index))
+             }
+-            queue.add(ProtoValuePathPair(childPath, childValue))
++            queue.add(DataConnectPathValuePair(childPath, childValue))
+           }
+         }
+       }

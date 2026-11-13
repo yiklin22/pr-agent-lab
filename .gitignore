@@ -1,0 +1,11 @@
+# third-party checkouts and re-downloadable data (pins in data/step0/SOURCES.md)
+upstream/
+data/swe-prbench/
+# secrets
+.env
+.env.*
+*.secrets.toml
+.secrets.toml
+# local tooling
+.venv/
+__pycache__/

@@ -1,0 +1,211 @@
+diff --git a/docs/_newsfragments/2538.newandimproved.rst b/docs/_newsfragments/2538.newandimproved.rst
+new file mode 100644
+index 000000000..323a5814a
+--- /dev/null
++++ b/docs/_newsfragments/2538.newandimproved.rst
+@@ -0,0 +1,5 @@
++The :meth:`req.get_param_as_list <falcon.Request.get_param_as_list>` method now
++supports a new argument, `delimiter`, for splitting of values.
++In line with the OpenAPI v3 parameter specification, the supported delimiters
++currently include the ``'pipeDelimited'`` and ``'spaceDelimited'`` symbolic
++constants, as well as the literal ``','``, ``'|'``, and ``' '`` characters.
+diff --git a/falcon/request.py b/falcon/request.py
+index 49bf50dd2..500182a4f 100644
+--- a/falcon/request.py
++++ b/falcon/request.py
+@@ -58,6 +58,14 @@
+ FALSE_STRINGS = frozenset(['false', 'False', 'f', 'no', 'n', '0', 'off'])
+ WSGI_CONTENT_HEADERS = frozenset(['CONTENT_TYPE', 'CONTENT_LENGTH'])
+ 
++_PARAM_VALUE_DELIMITERS = {
++    ',': ',',
++    '|': '|',
++    ' ': ' ',
++    'pipeDelimited': '|',
++    'spaceDelimited': ' ',
++}
++
+ # PERF(kgriffs): Avoid an extra namespace lookup when using these functions
+ strptime = datetime.strptime
+ now = datetime.now
+@@ -1944,6 +1952,7 @@ def get_param_as_list(
+         required: Literal[True],
+         store: StoreArg = ...,
+         default: list[str] | None = ...,
++        delimiter: str | None = None,
+     ) -> list[str]: ...
+ 
+     @overload
+@@ -1954,6 +1963,7 @@ def get_param_as_list(
+         required: Literal[True],
+         store: StoreArg = ...,
+         default: list[_T] | None = ...,
++        delimiter: str | None = None,
+     ) -> list[_T]: ...
+ 
+     @overload
+@@ -1965,6 +1975,7 @@ def get_param_as_list(
+         store: StoreArg = ...,
+         *,
+         default: list[str],
++        delimiter: str | None = None,
+     ) -> list[str]: ...
+ 
+     @overload
+@@ -1976,6 +1987,7 @@ def get_param_as_list(
+         store: StoreArg = ...,
+         *,
+         default: list[_T],
++        delimiter: str | None = None,
+     ) -> list[_T]: ...
+ 
+     @overload
+@@ -1986,6 +1998,7 @@ def get_param_as_list(
+         required: bool = ...,
+         store: StoreArg = ...,
+         default: list[str] | None = ...,
++        delimiter: str | None = None,
+     ) -> list[str] | None: ...
+ 
+     @overload
+@@ -1996,6 +2009,7 @@ def get_param_as_list(
+         required: bool = ...,
+         store: StoreArg = ...,
+         default: list[_T] | None = ...,
++        delimiter: str | None = None,
+     ) -> list[_T] | None: ...
+ 
+     def get_param_as_list(
+@@ -2005,6 +2019,7 @@ def get_param_as_list(
+         required: bool = False,
+         store: StoreArg = None,
+         default: list[_T] | None = None,
++        delimiter: str | None = None,
+     ) -> list[_T] | list[str] | None:
+         """Return the value of a query string parameter as a list.
+ 
+@@ -2033,7 +2048,33 @@ def get_param_as_list(
+                 the value of the param, but only if the param is found (default
+                 ``None``).
+             default (any): If the param is not found returns the
+-                given value instead of ``None``
++                given value instead of ``None``.
++            delimiter(str): An optional character for splitting a parameter
++                value into a list. In addition to the ``','``, ``' '``, and
++                ``'|'`` characters, the ``'spaceDelimited'`` and
++                ``'pipeDelimited'`` symbolic constants from the
++                `OpenAPI v3 parameter specification
++                <https://spec.openapis.org/oas/v3.2.0.html#style-values>`__
++                are also supported.
++
++                Note:
++                    If the parameter was already passed as an array, e.g., as
++                    multiple instances (the OAS ``'explode'`` style), the
++                    `delimiter` argument has no effect.
++
++                Note:
++                    In contrast to the automatic splitting of comma-separated
++                    values via the
++                    :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option,
++                    values are split by `delimiter` **after** percent-decoding
++                    the query string.
++
++                    The :attr:`~falcon.RequestOptions.keep_blank_qs_values`
++                    option has no effect on the secondary splitting by
++                    `delimiter` either.
++
++                .. versionadded:: 4.3
++                    The `delimiter` keyword argument.
+ 
+         Returns:
+             list: The value of the param if it is found. Otherwise, returns
+@@ -2053,6 +2094,15 @@ def get_param_as_list(
+             :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option must be
+             set to ``True``.
+ 
++            Even if the :attr:`~falcon.RequestOptions.auto_parse_qs_csv` option
++            is set (by default) to ``False``, a value can also be split into
++            list elements by using an OpenAPI spec-compatible delimiter, e.g.:
++
++            >>> req
++            <Request: GET 'http://falconframework.org/?colors=blue%7Cblack%7Cbrown'>
++            >>> req.get_param_as_list('colors', delimiter='pipeDelimited')
++            ['blue', 'black', 'brown']
++
+         Raises:
+             HTTPBadRequest: A required param is missing from the request, or
+                 a transform function raised an instance of ``ValueError``.
+@@ -2066,6 +2116,16 @@ def get_param_as_list(
+         if name in params:
+             items = params[name]
+ 
++            # NOTE(bricklayer25): If a delimiter is specified AND the param is
++            #   a single string, split it.
++            if delimiter is not None and isinstance(items, str):
++                if delimiter not in _PARAM_VALUE_DELIMITERS:
++                    raise ValueError(
++                        f'Unsupported delimiter value: {delimiter!r};'
++                        f' supported: {tuple(_PARAM_VALUE_DELIMITERS)}'
++                    )
++                items = items.split(_PARAM_VALUE_DELIMITERS[delimiter])
++
+             # NOTE(warsaw): When a key appears multiple times in the request
+             # query, it will already be represented internally as a list.
+             # NOTE(kgriffs): Likewise for comma-delimited values.
+diff --git a/tests/test_request_attrs.py b/tests/test_request_attrs.py
+index 8373c54da..bb6a70980 100644
+--- a/tests/test_request_attrs.py
++++ b/tests/test_request_attrs.py
+@@ -1012,6 +1012,52 @@ def test_etag_parsing_helper(self, asgi, header_value):
+ 
+         assert _parse_etags(header_value) is None
+ 
++    def test_get_param_as_list_comma_delimited(self, asgi):
++        req = create_req(asgi, query_string='names=Luke,Leia,Han')
++        result = req.get_param_as_list('names', delimiter=',')
++        assert result == ['Luke', 'Leia', 'Han']
++
++    @pytest.mark.parametrize('delimiter', [' ', 'spaceDelimited'])
++    def test_get_param_as_list_space_delimited(self, asgi, delimiter):
++        req = create_req(asgi, query_string='names=Luke%20Leia%20Han')
++        result = req.get_param_as_list('names', delimiter=delimiter)
++        assert result == ['Luke', 'Leia', 'Han']
++
++    @pytest.mark.parametrize(
++        'query_string', ['names=Luke|Leia|Han', 'names=Luke%7CLeia%7CHan']
++    )
++    @pytest.mark.parametrize('delimiter', ['|', 'pipeDelimited'])
++    def test_get_param_as_list_pipe_delimited(self, asgi, query_string, delimiter):
++        req = create_req(asgi, query_string=query_string)
++        result = req.get_param_as_list('names', delimiter=delimiter)
++        assert result == ['Luke', 'Leia', 'Han']
++
++    def test_get_param_as_list_unsupported_delimiter(self, asgi):
++        req = create_req(asgi, query_string='names=Luke;Leia;Han')
++        with pytest.raises(ValueError):
++            req.get_param_as_list('names', delimiter=';')
++
++    @pytest.mark.parametrize('delimiter', ['pipeDelimited', 'spaceDelimited'])
++    def test_get_param_as_list_parse_qs_csv_vs_delimiter(self, asgi, delimiter):
++        options = falcon.RequestOptions()
++        options.auto_parse_qs_csv = True
++
++        req = create_req(
++            asgi, query_string='names=value 1,value|2,value 3', options=options
++        )
++
++        result = req.get_param_as_list('names', delimiter=delimiter)
++
++        assert result == ['value 1', 'value|2', 'value 3']
++
++    @pytest.mark.parametrize('delimiter', [' ', 'spaceDelimited'])
++    def test_get_param_as_list_multiple_values_vs_delimiter(self, asgi, delimiter):
++        req = create_req(
++            asgi, query_string='phrase=quick%20brown%20fox&phrase=lazy%20dog'
++        )
++        result = req.get_param_as_list('phrase', delimiter=delimiter)
++        assert result == ['quick brown fox', 'lazy dog']
++
+     # -------------------------------------------------------------------------
+     # Helpers
+     # -------------------------------------------------------------------------
